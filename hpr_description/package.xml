@@ -3,9 +3,15 @@
 <package format="3">
   <name>hpr_description</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="linzhank@gmail.com">pbd0</maintainer>
-  <license>TODO: License declaration</license>
+  <description>HomePlateR description package</description>
+  <maintainer email="lzhang12@uca.edu">linzhangUCA</maintainer>
+  <license>GPLv3</license>
+
+  <exec_depend>joint_state_publisher</exec_depend>
+  <exec_depend>joint_state_publisher_gui</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+  <exec_depend>xacro</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
