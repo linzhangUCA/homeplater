@@ -3,7 +3,7 @@ from ament_index_python.packages import get_package_share_path
 import launch
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess
-from launch.conditions import UnlessCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import Command, LaunchConfiguration
 import launch_ros
 from launch_ros.actions import Node
@@ -54,11 +54,17 @@ def generate_launch_description():
             }
         ],
     )
+    # Depending on gui parameter, either launch joint_state_publisher or joint_state_publisher_gui
     joint_state_publisher_node = Node(
         package="joint_state_publisher",
         executable="joint_state_publisher",
-        name="joint_state_publisher",
         condition=UnlessCondition(LaunchConfiguration("gui")),
+    )
+
+    joint_state_publisher_gui_node = Node(
+        package="joint_state_publisher_gui",
+        executable="joint_state_publisher_gui",
+        condition=IfCondition(LaunchConfiguration("gui")),
     )
     rviz_node = Node(
         package="rviz2",
@@ -87,12 +93,12 @@ def generate_launch_description():
             "homeplater",
             "-topic",
             "robot_description",
-            # "-x",
-            # "0.0",
-            # "-y",
-            # "0.0",
-            # "-z",
-            # "0.5",
+            "-x",
+            "0.0",
+            "-y",
+            "0.0",
+            "-z",
+            "0.5",
         ],
         output="screen",
     )
@@ -104,9 +110,10 @@ def generate_launch_description():
             model_arg,
             rviz_arg,
             joint_state_publisher_node,
+            joint_state_publisher_gui_node,
+            robot_state_publisher_node,
             gazebo_process,
             spawn_entity,
-            robot_state_publisher_node,
             rviz_node,
         ]
     )
