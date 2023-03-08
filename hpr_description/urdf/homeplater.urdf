@@ -15,10 +15,20 @@
     <joint name="caster joint" type="fixed">
         <parent link="base_link"/>
         <child link="caster"/>
+        <origin xyz="-0.092 0 -0.0185" rpy="0.707 -0.707 -1.571"/>
     </joint>
 
     <link name="caster">
     </link>
 
+    <joint name="left_wheel_joint" type="continuous">
+        <parent link="base_link"/>
+        <child link="left_wheel"/>
+        <origin xyz="0.048 0.095 0" rpy="1.571 0 0"/>
+        <axis xyz="0 0 1" />
+    </joint>
+
+    <link name="left_wheel">
+    </link>
 </robot>
 
