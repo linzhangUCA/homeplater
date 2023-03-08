@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="homeplater">
-    <xacro:include filename="$(find hpr_description)/urdf/hpr_core.urdf.xacro" />
-</robot>
-
