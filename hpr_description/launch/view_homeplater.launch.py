@@ -11,7 +11,7 @@ from launch_ros.parameter_descriptions import ParameterValue
 
 def generate_launch_description():
     package_path = get_package_share_path("hpr_description")
-    model_path = package_path / "urdf/homeplater.urdf"
+    model_path = package_path / "urdf/homeplater.urdf.xacro"
     rviz_config_path = package_path / "rviz/hpr.rviz"
 
     gui_arg = DeclareLaunchArgument(
