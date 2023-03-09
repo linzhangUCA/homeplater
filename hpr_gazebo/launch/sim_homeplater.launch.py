@@ -9,10 +9,8 @@ from launch_ros.parameter_descriptions import ParameterValue
 
 def generate_launch_description():
     urdf_package_path = get_package_share_path("hpr_description")
-    gazebo_package_path = get_package_share_path("hpr_gazebo")
     model_path = urdf_package_path / "urdf/homeplater.urdf.xacro"
     rviz_config_path = urdf_package_path / "rviz/hpr.rviz"
-    world_path = gazebo_package_path / "worlds/demo_world.sdf"
 
     model_arg = DeclareLaunchArgument(
         name="model",
@@ -56,7 +54,6 @@ def generate_launch_description():
             "libgazebo_ros_init.so",
             "-s",
             "libgazebo_ros_factory.so",
-            str(world_path),
         ],
         output="screen",
     )
@@ -94,6 +91,6 @@ def generate_launch_description():
             robot_state_publisher_node,
             gazebo_process,
             spawn_entity,
-            # rviz_node,
+            rviz_node,
         ]
     )
