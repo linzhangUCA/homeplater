@@ -24,7 +24,6 @@
     <xacro:property name="wheel_mass" value="0.032" />
     <!-- caster properties -->
     <xacro:property name="caster_xoffset" value="-0.044" />
-    <!-- <xacro:property name="caster_zoffset" value="-0.0315" /> -->
     <xacro:property name="caster_radius" value="0.014" />
     <xacro:property name="caster_mass" value="0.1" />
 
@@ -57,7 +56,7 @@
         <joint name="${prefix}_joint" type="continuous">
             <parent link="base_link" />
             <child link="${prefix}_link" />
-            <origin xyz="${wheel_xoffset} ${y_reflect*wheel_yoffset} ${wheel_zoffset}" rpy="${pi/2} 0 0" />
+            <origin xyz="${wheel_xoffset} ${y_reflect*wheel_yoffset} ${wheel_zoffset}" rpy="${-pi/2} 0 0" />
             <axis xyz="0 0 1" />
         </joint>
 
