@@ -12,7 +12,7 @@ def generate_launch_description():
     urdf_package_path = get_package_share_path("hpr_description")
     gazebo_package_path = get_package_share_path("hpr_gazebo")
     model_path = urdf_package_path / "urdf/homeplater.urdf.xacro"
-    rviz_config_path = urdf_package_path / "rviz/hpr.rviz"
+    rviz_config_path = urdf_package_path / "rviz/hpr_gazebo.rviz"
     world_path = gazebo_package_path / "worlds/demo_world.sdf"
 
     model_arg = DeclareLaunchArgument(
