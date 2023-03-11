@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" >
-    <xacro:include filename="$(find hpr_description)/urdf/materials.xacro" />
-    <xacro:include filename="$(find hpr_description)/urdf/inertia.xacro" />
+    <!-- <xacro:include filename="$(find hpr_description)/urdf/materials.xacro" />
+    <xacro:include filename="$(find hpr_description)/urdf/inertia.xacro" /> -->
+    <xacro:include filename="materials.xacro" />
+    <xacro:include filename="inertia.xacro" />
 
     <!-- base properties -->
     <xacro:property name="chassis_xoffset" value="-0.048" />
@@ -90,7 +92,7 @@
     </gazebo>
 
     <!-- CASTER WHEEL -->
-    <!-- <joint name="caster_joint" type="fixed">
+    <joint name="caster_joint" type="fixed">
         <parent link="base_link" />
         <child link="caster_link" />
         <origin xyz="${caster_xoffset} 0.0 ${caster_radius-wheel_radius}" />
@@ -117,10 +119,10 @@
         <mu1>0.00000001</mu1>
         <mu2>0.00000001</mu2>
         <material>Gazebo/Gray</material>
-    </gazebo> -->
+    </gazebo>
 
     <!-- LEFT AND RIGHT WHEEL -->
-    <!-- <xacro:wheel prefix="left_wheel" y_reflect="1" />
-    <xacro:wheel prefix="right_wheel" y_reflect="-1" /> -->
+    <xacro:wheel prefix="left_wheel" y_reflect="1" />
+    <xacro:wheel prefix="right_wheel" y_reflect="-1" />
     
 </robot>
