@@ -3,7 +3,8 @@
     <!-- <xacro:include filename="$(find hpr_description)/urdf/hpr_core.urdf.xacro" /> -->
     <xacro:include filename="hpr_core.urdf.xacro" />
     <xacro:include filename="lidar.urdf.xacro" />
-    <xacro:include filename="gazebo_ros_diff_drive.xacro" />
+    <!-- <xacro:include filename="gazebo_ros_diff_drive.xacro" /> -->
+    <xacro:include filename="gazebo_ros2_control.xacro" />
     <xacro:include filename="gazebo_ros_ray.xacro" />
     
 </robot>
