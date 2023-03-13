@@ -3,7 +3,6 @@
     <!-- inertial macro -->
     <xacro:macro name="box_inertia" params="m x y z">
         <inertial>
-            <origin xyz="0 0 0" rpy="${pi/2} 0 ${pi/2}" />
             <mass value="${m}" />
             <inertia ixx="${(m/12) * (y*y + z*z)}" ixy="0.0" ixz="0.0" iyy="${(m/12) * (z*z + x*x)}" iyz="0.0" izz="${(m/12) * (x*x + y*y)}" />
         </inertial>
@@ -11,7 +10,6 @@
 
     <xacro:macro name="cylinder_inertia" params="m r h">
         <inertial>
-            <origin xyz="0 0 0" rpy="${pi/2} 0 0" />
             <mass value="${m}" />
             <inertia ixx="${(m/12) * (3*r*r + h*h)}" ixy="0" ixz="0" iyy="${(m/12) * (3*r*r + h*h)}" iyz="0" izz="${(m/2) * (r*r)}" />
         </inertial>
