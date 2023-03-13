@@ -1,6 +1,5 @@
 from xmlrpc.client import boolean
 from ament_index_python.packages import get_package_share_path
-import launch
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.substitutions import Command, LaunchConfiguration
