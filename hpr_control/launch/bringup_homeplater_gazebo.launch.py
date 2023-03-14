@@ -11,7 +11,7 @@ def generate_launch_description():
     urdf_package_path = get_package_share_path("hpr_description")
     gazebo_package_path = get_package_share_path("hpr_gazebo")
     model_path = urdf_package_path / "urdf/homeplater.urdf.xacro"
-    rviz_config_path = urdf_package_path / "rviz/hpr_gazebo.rviz"
+    rviz_config_path = urdf_package_path / "rviz/hpr.rviz"
     world_path = gazebo_package_path / "worlds/demo_world.sdf"
 
     model_arg = DeclareLaunchArgument(
@@ -82,13 +82,13 @@ def generate_launch_description():
     diff_drive_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["diff_cont"],
+        arguments=["diff_drive_controller"],
     )
 
     joint_broad_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["joint_broad"],
+        arguments=["joint_state_broadcaster"],
     )
 
     rviz_node = Node(
