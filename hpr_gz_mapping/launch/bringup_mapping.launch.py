@@ -1,10 +1,11 @@
 from xmlrpc.client import boolean
 from ament_index_python.packages import get_package_share_path
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess
-from launch.substitutions import Command, LaunchConfiguration
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, ExecuteProcess
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
+from launch.substitutions import Command, LaunchConfiguration
 
 
 def generate_launch_description():
@@ -12,8 +13,9 @@ def generate_launch_description():
     gazebo_package_path = get_package_share_path("hpr_gazebo")
     mapping_package_path = get_package_share_path("hpr_gz_mapping")
     model_path = urdf_package_path / "urdf/homeplater.urdf.xacro"
-    rviz_config_path = urdf_package_path / "rviz/hpr_gazebo.rviz"
+    rviz_config_path = mapping_package_path / "rviz/hpr_slam.rviz"
     world_path = gazebo_package_path / "worlds/demo_world.sdf"
+    slam_toolbox_package_path = get_package_share_path("slam_toolbox")
 
     model_arg = DeclareLaunchArgument(
         name="model",
@@ -85,7 +87,7 @@ def generate_launch_description():
         name="ekf_filter_node",
         output="screen",
         parameters=[
-            str(mapping_package_path / "configs/ekf.yaml"),
+            str(mapping_package_path / "config/ekf.yaml"),
             {"use_sim_time": LaunchConfiguration("use_sim_time")},
         ],
     )
@@ -97,6 +99,13 @@ def generate_launch_description():
         arguments=["-d", LaunchConfiguration("rvizconfig")],
     )
 
+    launch_online_async_slam = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            str(slam_toolbox_package_path / "launch/online_async_launch.py")
+        )
+    )
+
+
     return LaunchDescription(
         [
             sim_time_arg,
@@ -107,6 +116,7 @@ def generate_launch_description():
             gazebo_process,
             spawn_entity,
             robot_localization_node,
+            launch_online_async_slam,
             rviz_node,
         ]
     )
