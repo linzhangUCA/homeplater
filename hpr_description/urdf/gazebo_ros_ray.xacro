@@ -5,7 +5,7 @@
         <sensor name="lidar" type="ray">
             <always_on>true</always_on>
             <visualize>true</visualize>
-            <update_rate>5</update_rate>
+            <update_rate>10</update_rate>
             <ray>
                 <scan>
                     <horizontal>
@@ -31,7 +31,7 @@
                     <remapping>~/out:=scan</remapping>
                 </ros>
                 <output_type>sensor_msgs/LaserScan</output_type>
-                <frame_name>lidar</frame_name>
+                <!-- <frame_name>lidar</frame_name> -->
             </plugin>
         </sensor>
     </gazebo>
