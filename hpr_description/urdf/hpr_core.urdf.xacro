@@ -91,6 +91,7 @@
         <material>Gazebo/Purple</material>
     </gazebo>
 
+<<<<<<< HEAD
     <!-- CASTER WHEEL -->
     <joint name="caster_joint" type="fixed">
         <parent link="base_link" />
@@ -98,6 +99,25 @@
         <origin xyz="${caster_xoffset} 0.0 ${caster_radius-wheel_radius}" />
     </joint>
 
+=======
+    <!-- FOOTPRINT -->
+    <joint name="footprint_joint" type="fixed">
+        <parent link="base_link" />
+        <child link="base_footprint" />
+        <origin xyz="${chassis_xoffset} 0 ${-wheel_radius}" />
+    </joint>
+
+    <link name="base_footprint">
+    </link>
+
+    <!-- CASTER WHEEL -->
+    <joint name="caster_joint" type="fixed">
+        <parent link="base_link" />
+        <child link="caster_link" />
+        <origin xyz="${caster_xoffset} 0.0 ${caster_radius-wheel_radius}" />
+    </joint>
+
+>>>>>>> 7-sim_slam
     <link name="caster_link">
         <visual>
             <geometry>
