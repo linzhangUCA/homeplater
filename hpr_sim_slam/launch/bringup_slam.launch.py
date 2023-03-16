@@ -1,27 +1,16 @@
-from xmlrpc.client import boolean
 from ament_index_python.packages import get_package_share_path
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, ExecuteProcess
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
-from launch_ros.parameter_descriptions import ParameterValue
-from launch.substitutions import Command, LaunchConfiguration
+from launch.substitutions import LaunchConfiguration
 
 
 def generate_launch_description():
-    urdf_package_path = get_package_share_path("hpr_description")
     gazebo_package_path = get_package_share_path("hpr_gazebo")
     slam_package_path = get_package_share_path("hpr_sim_slam")
-    model_path = urdf_package_path / "urdf/homeplater.urdf.xacro"
     rviz_config_path = slam_package_path / "rviz/hpr_slam.rviz"
-    world_path = gazebo_package_path / "worlds/demo_world.sdf"
-    slam_toolbox_package_path = get_package_share_path("slam_toolbox")
 
-    model_arg = DeclareLaunchArgument(
-        name="model",
-        default_value=str(model_path),
-        description="Absolute path to robot urdf file",
-    )
     sim_time_arg = DeclareLaunchArgument(
         name="use_sim_time",
         default_value="true",
@@ -34,53 +23,17 @@ def generate_launch_description():
         description="Absolute path to rviz config file",
     )
 
-    robot_description = ParameterValue(
-        Command(["xacro ", LaunchConfiguration("model")]), value_type=str
+    hpr_gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            str(gazebo_package_path / "launch/sim_homeplater.launch.py")
+        )
     )
-
-    robot_state_publisher_node = Node(
-        package="robot_state_publisher",
-        executable="robot_state_publisher",
-        parameters=[
-            {
-                "use_sim_time": LaunchConfiguration("use_sim_time"),
-                "robot_description": robot_description,
-            }
-        ],
+    launch_online_async_slam = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            str(get_package_share_path("slam_toolbox") / "launch/online_async_launch.py")
+        )
     )
-    joint_state_publisher_node = Node(
-        package="joint_state_publisher",
-        executable="joint_state_publisher",
-    )
-    gazebo_process = ExecuteProcess(
-        cmd=[
-            "gazebo",
-            "--verbose",
-            "-s",
-            "libgazebo_ros_init.so",
-            "-s",
-            "libgazebo_ros_factory.so",
-            str(world_path),
-        ],
-        output="screen",
-    )
-    spawn_entity = Node(
-        package="gazebo_ros",
-        executable="spawn_entity.py",
-        arguments=[
-            "-entity",
-            "homeplater",
-            "-topic",
-            "robot_description",
-            "-x",
-            "0.0",
-            "-y",
-            "0.0",
-            "-z",
-            "0.5",
-        ],
-        output="screen",
-    )
+    
     robot_localization_node = Node(
         package="robot_localization",
         executable="ekf_node",
@@ -99,22 +52,11 @@ def generate_launch_description():
         arguments=["-d", LaunchConfiguration("rvizconfig")],
     )
 
-    launch_online_async_slam = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            str(slam_toolbox_package_path / "launch/online_async_launch.py")
-        )
-    )
-
-
     return LaunchDescription(
         [
             sim_time_arg,
-            model_arg,
             rviz_arg,
-            # joint_state_publisher_node,
-            robot_state_publisher_node,
-            gazebo_process,
-            spawn_entity,
+            hpr_gazebo,
             robot_localization_node,
             launch_online_async_slam,
             rviz_node,
