@@ -91,6 +91,16 @@
         <material>Gazebo/Purple</material>
     </gazebo>
 
+    <!-- FOOTPRINT -->
+    <joint name="footprint_joint" type="fixed">
+        <parent link="base_link" />
+        <child link="base_footprint" />
+        <origin xyz="${chassis_xoffset} 0 ${-wheel_radius}" />
+    </joint>
+
+    <link name="base_footprint">
+    </link>
+
     <!-- CASTER WHEEL -->
     <joint name="caster_joint" type="fixed">
         <parent link="base_link" />
