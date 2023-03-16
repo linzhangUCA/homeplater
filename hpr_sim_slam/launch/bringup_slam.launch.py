@@ -11,9 +11,9 @@ from launch.substitutions import Command, LaunchConfiguration
 def generate_launch_description():
     urdf_package_path = get_package_share_path("hpr_description")
     gazebo_package_path = get_package_share_path("hpr_gazebo")
-    mapping_package_path = get_package_share_path("hpr_gz_mapping")
+    slam_package_path = get_package_share_path("hpr_sim_slam")
     model_path = urdf_package_path / "urdf/homeplater.urdf.xacro"
-    rviz_config_path = mapping_package_path / "rviz/hpr_slam.rviz"
+    rviz_config_path = slam_package_path / "rviz/hpr_slam.rviz"
     world_path = gazebo_package_path / "worlds/demo_world.sdf"
     slam_toolbox_package_path = get_package_share_path("slam_toolbox")
 
@@ -87,7 +87,7 @@ def generate_launch_description():
         name="ekf_filter_node",
         output="screen",
         parameters=[
-            str(mapping_package_path / "config/ekf.yaml"),
+            str(slam_package_path / "config/ekf.yaml"),
             {"use_sim_time": LaunchConfiguration("use_sim_time")},
         ],
     )

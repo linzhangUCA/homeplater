@@ -2,7 +2,7 @@ import os
 from glob import glob
 from setuptools import setup
 
-package_name = 'hpr_gz_mapping'
+package_name = 'hpr_sim_slam'
 
 setup(
     name=package_name,
@@ -19,7 +19,7 @@ setup(
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='pbd0',
-    maintainer_email='lzhang12@uca.edu',
+    maintainer_email='pbd0@todo.todo',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
