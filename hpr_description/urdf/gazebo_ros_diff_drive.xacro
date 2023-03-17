@@ -8,12 +8,6 @@
         </plugin>
         
         <plugin name="diff_drive_plugin" filename="libgazebo_ros_diff_drive.so">
-            <ros>
-                <!-- <namespace>/homeplater</namespace> -->
-                <!-- <argument>cmd_vel:=cmd_demo</argument>
-                <argument>odom:=odom_demo</argument> -->
-            </ros>
-            
             <!-- wheels -->
             <left_joint>left_wheel_joint</left_joint>
             <right_joint>right_wheel_joint</right_joint>
