@@ -9,7 +9,7 @@
         
         <plugin name="diff_drive_plugin" filename="libgazebo_ros_diff_drive.so">
             <ros>
-                <namespace>/homeplater</namespace>
+                <!-- <namespace>/homeplater</namespace> -->
                 <!-- <argument>cmd_vel:=cmd_demo</argument>
                 <argument>odom:=odom_demo</argument> -->
             </ros>
