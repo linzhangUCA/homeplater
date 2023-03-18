@@ -8,9 +8,16 @@
         </plugin>
         
         <plugin name="diff_drive_plugin" filename="libgazebo_ros_diff_drive.so">
+            <!-- <ros>
+                <namespace>/homeplater</namespace>
+                <remapping>cmd_vel:=cmd_demo</remapping>
+                <remapping>odom:=odom_demo</remapping>
+            </ros> -->
+            
             <!-- wheels -->
             <left_joint>left_wheel_joint</left_joint>
-            <right_joint>right_wheel_joint</right_joint>
+            <right_joint>
+                right_wheel_joint</right_joint>
 
             <!-- kinematics -->
             <wheel_separation>0.19</wheel_separation>
@@ -18,13 +25,15 @@
 
             <!-- tfs -->
             <publish_odom>true</publish_odom>
-            <publish_odom_tf>true</publish_odom_tf>
+            <publish_odom_tf>
+                true</publish_odom_tf>
             <publish_wheel_tf>true</publish_wheel_tf>
             <odometry_frame>odom</odometry_frame>
 
             <!-- limits -->
             <max_wheel_torque>20</max_wheel_torque>
-            <max_acceleration>1.0</max_acceleration>
+            <max_acceleration>
+                1.0</max_acceleration>
 
             <!-- miscs -->
             <robot_base_frame>base_link</robot_base_frame>
