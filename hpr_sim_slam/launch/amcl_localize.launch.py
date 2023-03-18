@@ -10,7 +10,6 @@ from nav2_common.launch import RewrittenYaml
 def generate_launch_description():
     gazebo_package_path = get_package_share_path("hpr_gazebo")
     sim_slam_package_path = get_package_share_path("hpr_sim_slam")
-    slam_toolbox_package_path = get_package_share_path("slam_toolbox")
     rviz_config_path = sim_slam_package_path / "rviz/hpr_slam.rviz"
 
     namespace_arg = DeclareLaunchArgument(
@@ -18,17 +17,11 @@ def generate_launch_description():
         default_value='',
         description='Top-level namespace'
     )
-
     sim_time_arg = DeclareLaunchArgument(
         name="use_sim_time",
         default_value="true",
         choices=["true", "false"],
         description="Flag to enable use simulation time",
-    )
-    slam_params_file_arg = DeclareLaunchArgument(
-        name="slam_params_file",
-        default_value=str(slam_toolbox_package_path / "config/mapper_params_online_async.yaml"),
-        description='Full path to the ROS2 parameters file to use for the slam_toolbox node'
     )
     rviz_arg = DeclareLaunchArgument(
         name="rvizconfig",
@@ -37,7 +30,7 @@ def generate_launch_description():
     )
     map_file_arg = DeclareLaunchArgument(
         name="map_file",
-        default_value=str(sim_slam_package_path / "maps/demo_world_map.yaml"),
+        default_value=str(sim_slam_package_path / "map/demo_world_map.yaml"),
         description='Full path to map yaml file to load'
     )
     autostart_arg = DeclareLaunchArgument(
@@ -94,16 +87,16 @@ def generate_launch_description():
         name='map_server',
         output='screen',
         parameters=[configured_params],
-        remappings=remappings),
-
+        remappings=remappings
+    )
     amcl_node = Node(
         package='nav2_amcl',
         executable='amcl',
         name='amcl',
         output='screen',
         parameters=[configured_params],
-        remappings=remappings),
-
+        remappings=remappings
+    )
     lifecycle_manager_node = Node(
         package='nav2_lifecycle_manager',
         executable='lifecycle_manager',
@@ -111,13 +104,13 @@ def generate_launch_description():
         output='screen',
         parameters=[{'use_sim_time': LaunchConfiguration("use_sim_time")},
                     {'autostart': LaunchConfiguration("autostart")},
-                    {'node_names': lifecycle_nodes}])
+                    {'node_names': lifecycle_nodes}]
+    )
 
     return LaunchDescription(
         [
             namespace_arg,
             sim_time_arg,
-            slam_params_file_arg,
             rviz_arg,
             map_file_arg,
             autostart_arg,
