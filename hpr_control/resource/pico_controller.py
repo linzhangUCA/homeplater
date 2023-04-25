@@ -1,3 +1,6 @@
+"""
+Upload this MicroPython script to the pico board.
+"""
 from math import pi
 from machine import Pin, PWM, Timer
 
