@@ -2,25 +2,7 @@ from math import pi
 from machine import Pin, PWM, Timer
 
 class Motor:
-    """
-    Represents a motor connected to a motor controller that has a two-pin
-    input. One pin drives the motor "forward", the other drives the motor
-    "backward".
 
-    :type forward: int
-    :param forward:
-        The GP pin that controls the "forward" motion of the motor. 
-    
-    :type backward: int
-    :param backward:
-        The GP pin that controls the "backward" motion of the motor. 
-    
-    :param bool pwm:
-        If :data:`True` (the default), PWM pins are used to drive the motor. 
-        When using PWM pins, values between 0 and 1 can be used to set the 
-        speed.
-    
-    """
     def __init__(self, dir_pin, pwm_pin, enca_pin, encb_pin, ab_order=1, frequency=1000):
         # constants
         self.ab_order = ab_order  # 1: a trigger first; -1: b trigger first
@@ -87,43 +69,11 @@ class Motor:
         self.prev_counts = self.encoder_counts
 
     def forward(self, duty=1.0):
-        """
-        Makes the motor turn "forward".
-
-        :param float speed:
-            The speed as a value between 0 and 1: 1 is full speed, 0 is stop. Defaults to 1.
-
-        :param float t:
-            The time in seconds that the motor should turn for. If None is 
-            specified, the motor will stay on. The default is None.
-
-        :param bool wait:
-           If True, the method will block until the time `t` has expired. 
-           If False, the method will return and the motor will turn on in
-           the background. Defaults to False. Only effective if `t` is not
-           None.
-        """
         assert 0<=duty<=1
         self._dir_pin.value(0)
         self._pwm_pin.duty_u16(int(duty*65536))
 
     def backward(self, duty=1.0):
-        """
-        Makes the motor turn "forward".
-
-        :param float speed:
-            The speed as a value between 0 and 1: 1 is full speed, 0 is stop. Defaults to 1.
-
-        :param float t:
-            The time in seconds that the motor should turn for. If None is 
-            specified, the motor will stay on. The default is None.
-
-        :param bool wait:
-           If True, the method will block until the time `t` has expired. 
-           If False, the method will return and the motor will turn on in
-           the background. Defaults to False. Only effective if `t` is not
-           None.
-        """
         assert 0<=duty<=1
         self._dir_pin.value(1)
         self._pwm_pin.duty_u16(int(duty*65536))
@@ -135,9 +85,12 @@ class Motor:
         self._pwm_pin.duty_u16(0)
         self.err = 0.
         self.prev_err = 0.
+        self.diff_err = 0.
         self.inte_err = 0.
 
     def set_velocity(self, target_vel):
+        if not target_vel == self.target_vel:  # zero error if new target vel set
+            self.err, self.prev_err, self.diff_err, self.inte_err = 0, 0, 0, 0
         self.target_vel = target_vel
         self.err = target_vel - self.velocity
         self.diff_err = self.err - self.prev_err
@@ -210,7 +163,7 @@ class Robot:
     def set_velocity(self, target_lin, target_ang):
         self.target_lin = target_lin
         self.target_ang = target_ang
-        left_target_vel = (target_lin - (target_ang * self.WHEEL_SEPARATION) / 2) / self.WHEEL_RADIUS
+        left_target_vel = (target_lin - (target_ang * self.WHEEL_SEPARATION) / 2) / self.WHEEL_RADIUS  # motor angular
         right_target_vel = (target_lin + (target_ang * self.WHEEL_SEPARATION) / 2) / self.WHEEL_RADIUS
         self._left_motor.set_velocity(left_target_vel) 
         self._right_motor.set_velocity(right_target_vel)
