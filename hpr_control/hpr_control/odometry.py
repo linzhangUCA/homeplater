@@ -1,10 +1,12 @@
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
+from tf_transformations import quaternion_about_axis
 
 import serial
 
-ser = serial.Serial('/dev/ttyACM0', 115200)
+from math import sin, cos, pi
 
 
 class HPRInterface(Node):
@@ -13,37 +15,69 @@ class HPRInterface(Node):
     """
 
     def __init__(self):
-        super().__init__('cmd_vel_subscriber')
+        super().__init__('hpr_interface')
         self.ser = serial.Serial('/dev/ttyACM0', 115200)
         self.cmd_vel_sub = self.create_subscription(
             Twist,
             'cmd_vel',
             self.cmd_vel_cb,
-            1)
-        self.cmd_vel_sub  # prevent unused variable warning
-        self.vel_pub = self.create_publisher(Twist, 'hpr_vel', 1)
-        self.vel_pub_timer = self.create_timer(0.02, self.vel_pub_cb)
-        # variable
-        self.lin_x = 0.
-        self.ang_z = 0.
+            1
+        )
+        self.odom_pub = self.create_publisher(Odometry, 'odom', 1)
+        self.odom_pub_timer = self.create_timer(0.02, self.odom_pub_cb)
+        # variables
+        self.lin_vel = 0.  # in base_link frame
+        self.ang_vel = 0.
+        self.x = 0.  # in odom frame
+        self.y = 0.
+        self.th = 0.
+        self.prev_ts = self.get_clock().now()
+        self.curr_ts = self.get_clock().now()
+        # constants
+        self.GROUND_CLEARANCE = 0.0375  # wheel radius
 
     def cmd_vel_cb(self, msg):
         target_lin = msg.linear.x
         target_ang = msg.angular.z
         target_vel_str = f"{target_lin},{target_ang}\n"
-        # print(target_vel_str)
         self.ser.write(bytes(target_vel_str.encode('utf-8')))
 
-    def vel_pub_cb(self):
-        vel_msg = Twist()
+    def odom_pub_cb(self):
         if self.ser.inWaiting() > 0:
             data_line = self.ser.readline().decode('utf-8').rstrip()
             vel_list = data_line.split(',')
-            self.lin_x = float(vel_list[0])
-            self.ang_z = float(vel_list[1])
-            vel_msg.linear.x = self.lin_x
-            vel_msg.angular.z = self.ang_z
-        self.vel_pub.publish(vel_msg)
+            self.lin_vel = float(vel_list[0])
+            self.ang_vel = float(vel_list[1])
+        self.curr_ts = self.get_clock().now()
+        dt = (self.curr_ts - self.prev_ts).nanoseconds * 1e-9
+        dx = self.lin_vel * cos(self.th) * dt
+        dy = self.lin_vel * sin(self.th) * dt
+        dth = self.ang_vel * dt
+        self.x += dx
+        self.y += dy
+        self.th += dth
+        if self.th > pi:
+            self.th -= 2 * pi
+        elif self.th < -pi:
+            self.th += 2 * pi
+        quat = quaternion_about_axis(self.th, (0, 0, 1))
+        self.prev_ts = self.curr_ts
+        # fill message
+        odom_msg = Odometry()
+        odom_msg.header.stamp.sec = self.curr_ts.seconds_nanoseconds()[0]
+        odom_msg.header.stamp.nanosec = self.curr_ts.seconds_nanoseconds()[1]
+        odom_msg.header.frame_id = "odom"
+        odom_msg.child_frame_id = "base_link"
+        odom_msg.pose.pose.position.x = self.x
+        odom_msg.pose.pose.position.y = self.y
+        odom_msg.pose.pose.position.z = self.GROUND_CLEARANCE
+        odom_msg.pose.pose.orientation.x = quat[0]
+        odom_msg.pose.pose.orientation.y = quat[1]
+        odom_msg.pose.pose.orientation.z = quat[2]
+        odom_msg.pose.pose.orientation.w = quat[3]
+        odom_msg.twist.twist.linear.x = self.lin_vel
+        odom_msg.twist.twist.angular.z = self.ang_vel
+        self.odom_pub.publish(odom_msg)
 
 
 def main(args=None):
