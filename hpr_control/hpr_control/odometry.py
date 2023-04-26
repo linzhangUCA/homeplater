@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Twist
+from tf2_ros import TransformBroadcaster
+from geometry_msgs.msg import Twist, TransformStamped
 from nav_msgs.msg import Odometry
 from tf_transformations import quaternion_about_axis
 
@@ -23,6 +24,7 @@ class HPRInterface(Node):
             self.cmd_vel_cb,
             1
         )
+        self.trans_broad = TransformBroadcaster(self)
         self.odom_pub = self.create_publisher(Odometry, 'odom', 1)
         self.odom_pub_timer = self.create_timer(0.02, self.odom_pub_cb)
         # variables
@@ -62,10 +64,24 @@ class HPRInterface(Node):
             self.th += 2 * pi
         quat = quaternion_about_axis(self.th, (0, 0, 1))
         self.prev_ts = self.curr_ts
-        # fill message
+        # publish transform
+        trans_msg = TransformStamped()
+        trans_msg.header.stamp = self.curr_ts.to_msg()
+        trans_msg.header.frame_id = "odom"
+        trans_msg.child_frame_id = "base_link"
+        trans_msg.transform.translation.x = self.x
+        trans_msg.transform.translation.y = self.y
+        trans_msg.transform.translation.z = self.GROUND_CLEARANCE
+        trans_msg.transform.rotation.x = quat[0]
+        trans_msg.transform.rotation.y = quat[1]
+        trans_msg.transform.rotation.z = quat[2]
+        trans_msg.transform.rotation.w = quat[3]
+        self.trans_broad.sendTransform(trans_msg)
+        # publish odom
         odom_msg = Odometry()
-        odom_msg.header.stamp.sec = self.curr_ts.seconds_nanoseconds()[0]
-        odom_msg.header.stamp.nanosec = self.curr_ts.seconds_nanoseconds()[1]
+        odom_msg.header.stamp = self.curr_ts.to_msg()
+        # odom_msg.header.stamp.sec = self.curr_ts.seconds_nanoseconds()[0]
+        # odom_msg.header.stamp.nanosec = self.curr_ts.seconds_nanoseconds()[1]
         odom_msg.header.frame_id = "odom"
         odom_msg.child_frame_id = "base_link"
         odom_msg.pose.pose.position.x = self.x
