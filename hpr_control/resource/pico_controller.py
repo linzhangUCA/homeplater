@@ -1,31 +1,31 @@
 """
 Upload this MicroPython script to the pico board.
 """
+import sys
 from math import pi
 from machine import Pin, PWM, Timer
 
 class Motor:
 
     def __init__(self, dir_pin, pwm_pin, enca_pin, encb_pin, ab_order=1, frequency=1000):
-        # constants
-        self.ab_order = ab_order  # 1: a trigger first; -1: b trigger first
-        self.CPR = 48
-        self.GEAR_RATIO = 46.85
-        self.timer_period = 10  # millisecond
-        self.K_P = 0.01
-        self.K_I = 0.002
-        self.K_D = 0
-
         # set pins
         self._dir_pin = Pin(dir_pin, Pin.OUT)
         self._pwm_pin = PWM(Pin(pwm_pin))
+        self._pwm_pin.freq(5000)
         self._enca_pin = Pin(enca_pin, Pin.IN, Pin.PULL_UP)
         self._encb_pin = Pin(encb_pin, Pin.IN, Pin.PULL_UP)
         self._pwm_pin.freq(frequency)
         self._enca_pin.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=self._enca_handler)
         self._encb_pin.irq(trigger=Pin.IRQ_RISING | Pin.IRQ_FALLING, handler=self._encb_handler)
-        # set timer to monitor motor velocity
-        self._velocity_monitor = Timer(mode=Timer.PERIODIC, period=self.timer_period, callback=self._velmon_cb)
+        # constants
+        self.ab_order = ab_order  # 1: a trigger first; -1: b trigger first
+        self.CPR = 48
+        self.GEAR_RATIO = 46.85
+        self.monitor_period = 10  # millisecond
+        self.controller_period = 20  # millisecond
+        self.K_P = 0.01
+        self.K_I = 0.002
+        self.K_D = 0
         # variables
         self.encoder_counts = 0
         self.prev_counts = 0
@@ -38,6 +38,17 @@ class Motor:
         self.diff_err = 0.
         self.inte_err = 0.
         self.dutycycle = 0.
+        # set timer to monitor and control motor velocity
+        self._velocity_monitor = Timer(
+            mode=Timer.PERIODIC,
+            period=self.monitor_period,
+            callback=self._velmon_cb
+        )
+        self._velocity_controller = Timer(
+            mode=Timer.PERIODIC,
+            period=self.controller_period,
+            callback=self._velcon_cb
+        )
 
     def _enca_handler(self, pin):
         # self.encoder_counts, self.a_val
@@ -67,35 +78,18 @@ class Motor:
                 self.encoder_counts -= 1
 
     def _velmon_cb(self, timer):
+        """
+        compute motor velocity
+        """
         counts_diff = self.encoder_counts - self.prev_counts
-        self.velocity = self.ab_order * counts_diff / (self.CPR * self.GEAR_RATIO * self.timer_period / 1000) * (2 * pi)
+        self.velocity = self.ab_order * counts_diff / (self.CPR * self.GEAR_RATIO * self.monitor_period / 1000) * (2 * pi)
         self.prev_counts = self.encoder_counts
 
-    def forward(self, duty=1.0):
-        assert 0<=duty<=1
-        self._dir_pin.value(0)
-        self._pwm_pin.duty_u16(int(duty*65536))
-
-    def backward(self, duty=1.0):
-        assert 0<=duty<=1
-        self._dir_pin.value(1)
-        self._pwm_pin.duty_u16(int(duty*65536))
-
-    def stop(self):
+    def _velcon_cb(self, timer):
         """
-        Makes the motor stop.
+        bring motor velocity to target
         """
-        self._pwm_pin.duty_u16(0)
-        self.err = 0.
-        self.prev_err = 0.
-        self.diff_err = 0.
-        self.inte_err = 0.
-
-    def set_velocity(self, target_vel):
-        if not target_vel == self.target_vel:  # zero error if new target vel set
-            self.err, self.prev_err, self.diff_err, self.inte_err = 0, 0, 0, 0
-        self.target_vel = target_vel
-        self.err = target_vel - self.velocity
+        self.err = self.target_vel - self.velocity
         self.diff_err = self.err - self.prev_err
         self.inte_err += self.diff_err
         self.prev_err = self.err
@@ -103,13 +97,55 @@ class Motor:
         if self.dutycycle > 0:
             if self.dutycycle > 1:
                 self.dutycycle = 1
-            self.forward(duty=self.dutycycle)
+            self._forward(duty=self.dutycycle)
         elif self.dutycycle < 0:
             if self.dutycycle < -1:
                 self.dutycycle = -1
-            self.backward(duty=-self.dutycycle)
+            self._backward(duty=-self.dutycycle)
         else:
             self.stop()
+
+    def stop(self):
+        """
+        Makes the motor stop.
+        """
+        self._pwm_pin.duty_u16(0)
+        self.prev_err = 0.
+        self.diff_err = 0.
+        self.inte_err = 0.
+
+    def set_velocity(self, target_vel):
+        if not target_vel == self.target_vel:  # zero error if new target vel set
+            self.prev_err, self.diff_err, self.inte_err = 0, 0, 0
+        self.target_vel = target_vel
+
+    def _forward(self, duty=1.0):
+        """
+        Set motor speed according to PWM signal's duty cycle.
+        """
+        self._dir_pin.value(0)
+        self._pwm_pin.duty_u16(int(duty*65536))
+
+    def _backward(self, duty=1.0):
+        """
+        Set motor speed according to PWM signal's duty cycle.
+        """
+        self._dir_pin.value(1)
+        self._pwm_pin.duty_u16(int(duty*65536))
+
+    def pwm_forward(self, duty=1.0):
+        """
+        USE WITH CAUTION!!! Will disable velocity control timer.
+        """
+        self._velocity_controller.deinit()
+        self._forward(duty=duty)
+
+    def pwm_backward(self, duty=1.0):
+        """
+        USE WITH CAUTION!!! Will disable velocity control timer.
+        """
+        self._velocity_controller.deinit()
+        self._backward(duty=duty)
 
 
 class Robot:
@@ -118,46 +154,61 @@ class Robot:
         assert len(left_motor_pins)==4
         assert len(right_motor_pins)==4
         self._left_motor = Motor(
-            dir_pin=left_motor_pins[0], 
-            pwm_pin=left_motor_pins[1], 
-            enca_pin=left_motor_pins[2], 
-            encb_pin=left_motor_pins[3], 
-            ab_order=1, 
+            dir_pin=left_motor_pins[0],
+            pwm_pin=left_motor_pins[1],
+            enca_pin=left_motor_pins[2],
+            encb_pin=left_motor_pins[3],
+            ab_order=1,
             frequency=frequency
         )
         self._right_motor = Motor(
-            dir_pin=right_motor_pins[0], 
-            pwm_pin=right_motor_pins[1], 
-            enca_pin=right_motor_pins[2], 
-            encb_pin=right_motor_pins[3], 
-            ab_order=-1, 
+            dir_pin=right_motor_pins[0],
+            pwm_pin=right_motor_pins[1],
+            enca_pin=right_motor_pins[2],
+            encb_pin=right_motor_pins[3],
+            ab_order=-1,
             frequency=frequency
         )
+        self.led = Pin(25, Pin.OUT)  # serial data receiving indicator
         # constants
         self.WHEEL_RADIUS = 0.0375
         self.WHEEL_SEPARATION = 0.19
-        self.timer_period = 10  # ms
+        self.tx_period = 20  # millisecond
         # variables
-        self.linear_velocity = 0.  # actual linear velocity
-        self.angular_velocity = 0.  # actual angular velocity
+        self.linear_velocity = 0.  # actual velocity
+        self.angular_velocity = 0.
         self.target_lin = 0.  # target velocity
         self.target_ang = 0.
-        # set a timer to monitor robot velocity
-        self._velocity_monitor = Timer(mode=Timer.PERIODIC, period=self.timer_period, callback=self._velmon_cb)
+        # set a timer to broadcast measured velocity via usb serial port
+        self._velocity_transmitter = Timer(
+            mode=Timer.PERIODIC,
+            period=self.tx_period,
+            callback=self._veltrans_cb
+        )
 
-    def _velmon_cb(self, timer):
+    def _veltrans_cb(self, timer):
+        """
+        Compute and transmit robot's measured linear and angular velocity
+        """
         self.left_lin_vel = self._left_motor.velocity * self.WHEEL_RADIUS
         self.right_lin_vel = self._right_motor.velocity * self.WHEEL_RADIUS
         self.linear_velocity = (self.left_lin_vel + self.right_lin_vel) / 2
         self.angular_velocity = (self.right_lin_vel - self.left_lin_vel) / self.WHEEL_SEPARATION
+        sys.stdout.write(f"{self.linear_velocity},{self.angular_velocity}\n")
 
     def forward(self, speed=1.0):
-        self._left_motor.forward(duty=speed)
-        self._right_motor.forward(duty=speed)
+        """
+        USE WITH CAUTION!!! Will disable velocity control timer.
+        """
+        self._left_motor.pwm_forward(duty=speed)
+        self._right_motor.pwm_forward(duty=speed)
 
     def backward(self, speed=1.0):
-        self._left_motor.backward(duty=speed)
-        self._right_motor.backward(duty=speed)
+        """
+        USE WITH CAUTION!!! Will disable velocity control timer.
+        """
+        self._left_motor.pwm_backward(duty=speed)
+        self._right_motor.pwm_backward(duty=speed)
 
     def stop(self):
         self._left_motor.stop()
@@ -168,5 +219,5 @@ class Robot:
         self.target_ang = target_ang
         left_target_vel = (target_lin - (target_ang * self.WHEEL_SEPARATION) / 2) / self.WHEEL_RADIUS  # motor angular
         right_target_vel = (target_lin + (target_ang * self.WHEEL_SEPARATION) / 2) / self.WHEEL_RADIUS
-        self._left_motor.set_velocity(left_target_vel) 
+        self._left_motor.set_velocity(left_target_vel)
         self._right_motor.set_velocity(right_target_vel)

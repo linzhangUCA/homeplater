@@ -8,18 +8,17 @@ from time import sleep_ms
 
 
 homeplate_robot = Robot(left_motor_pins=(18, 19, 2, 3), right_motor_pins=(20, 21, 4, 5))
+cmd_vel_poller = select.poll()
+cmd_vel_poller.register(sys.stdin, select.POLLIN)
+event = cmd_vel_poller.poll()
 while True:
     # read data from serial
-    if select.select([sys.stdin], [], [], 0)[0]:
-        data_line = sys.stdin.readline()
-        vel_msg = data_line.split(',')
-        if len(vel_msg) == 2:
-            target_lin = float(vel_msg[0])
-            target_ang = float(vel_msg[1])
+    for cmd_vel_msg, _ in event:
+        cmd_vel_buffer = cmd_vel_msg.readline().rstrip().split(',')
+        if len(cmd_vel_buffer) == 2:
+            target_lin, target_ang = float(cmd_vel_buffer[0]), float(cmd_vel_buffer[1])
             homeplate_robot.set_velocity(target_lin, target_ang)
             homeplate_robot.led.value(1)
     else:
         homeplate_robot.led.value(0)
-    # send data via serial
-    sys.stdout.write(f"{homeplate_robot.linear_velocity},{homeplate_robot.angular_velocity}\n")
-    sleep_ms(10)
+
